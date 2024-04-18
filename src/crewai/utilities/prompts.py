@@ -1,6 +1,7 @@
 from typing import Any, ClassVar
 
-from langchain.prompts import BasePromptTemplate, PromptTemplate
+from langchain.prompts import (BasePromptTemplate, ChatPromptTemplate, PromptTemplate, HumanMessagePromptTemplate,
+                               SystemMessagePromptTemplate)
 from pydantic import BaseModel, Field
 
 from crewai.utilities import I18N
@@ -32,4 +33,12 @@ class Prompts(BaseModel):
         prompt_parts = [self.i18n.slice(component) for component in components]
         prompt_parts.append(self.SCRATCHPAD_SLICE)
         prompt = PromptTemplate.from_template("".join(prompt_parts))
+        if "tools" not in components:
+            system_parts = [self.i18n.slice(component) for component in components if component == "role_playing"]
+            user_parts = [self.i18n.slice(component) for component in components if component != "role_playing"]
+            messages = [
+              SystemMessagePromptTemplate.from_template("".join(system_parts)),
+              HumanMessagePromptTemplate.from_template("".join(user_parts)),
+            ]
+            prompt = ChatPromptTemplate.from_messages(messages)
         return prompt
